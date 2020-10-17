@@ -38,17 +38,28 @@ set(TIME dtime_.c etime_.c)
 
 # For INTEGER*8 support (which requires system-dependent adjustments to
 # f2c.h), add ${QINT} to the OFILES  assignment below...
-add_executable(arithchk arithchk.c)
-if(UNIX)
-  target_link_libraries(arithchk m)
+if(NOT CMAKE_CROSSCOMPILING)
+  add_executable(arithchk arithchk.c)
+  if(UNIX)
+    target_link_libraries(arithchk m)
+  endif()
+  set_target_properties(arithchk PROPERTIES COMPILE_DEFINITIONS
+          "NO_FPINIT;NO_LONG_LONG")
+  ADD_CUSTOM_COMMAND(
+          OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/arith.h
+          COMMAND arithchk > ${CMAKE_CURRENT_BINARY_DIR}/arith.h
+          DEPENDS arithchk
+  )
+else()
+  if(WIN32)
+      ADD_CUSTOM_COMMAND(
+              OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/arith.h
+              COMMAND ${CMAKE_COMMAND} -E copy ${CLAPACK_SOURCE_DIR}/F2CLIBS/libf2c/arith_win32.h ${CMAKE_CURRENT_BINARY_DIR}/arith.h
+      )
+  else()
+    message(FATAL_ERROR "No pre-generated arith.h file for this platform")
+  endif()
 endif()
-set_target_properties(arithchk PROPERTIES COMPILE_DEFINITIONS 
-  "NO_FPINIT;NO_LONG_LONG")
-ADD_CUSTOM_COMMAND(
-   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/arith.h
-   COMMAND arithchk > ${CMAKE_CURRENT_BINARY_DIR}/arith.h
-   DEPENDS arithchk
-   )
 
 
 set(OFILES  ${MISC} ${POW} ${CX} ${DCX} ${REAL} ${DBL} ${INT} 
